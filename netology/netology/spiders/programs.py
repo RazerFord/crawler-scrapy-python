@@ -1,11 +1,11 @@
 import scrapy
 import json
-
+from netology.items import NetologyItem
 
 class ProgramsSpider(scrapy.Spider):
     name = "programs"
     allowed_domains = ["netology.ru"]
-    start_urls = ["https://netology.ru/navigation"]
+    start_urls = ["https://netology.ru/backend/api/programs"]
 
     headers = {
         """
@@ -27,17 +27,12 @@ class ProgramsSpider(scrapy.Spider):
     }
 
     def parse(self, response):
-        url_api = "https://netology.ru/backend/api/programs"
-
-        yield scrapy.Request(url_api, callback=self.parse_api)
-
-    def parse_api(self, response):
         print(response)
         raw_data = response.body
         data = json.loads(raw_data)
         for program in data:
-            yield {
-                "program_id": program["id"],
-                "program_name": program["name"],
-                "program_url": "https:" + program["url"],
-            }
+            item = NetologyItem()
+            item['program_id'] = program["id"] 
+            item['program_name'] = program["name"] 
+            item['program_url'] = "https:" + program["url"] 
+            yield item

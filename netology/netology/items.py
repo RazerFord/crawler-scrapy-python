@@ -7,6 +7,6 @@ import scrapy
 
 
 class NetologyItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    program_id = scrapy.Field()
+    program_name = scrapy.Field()
+    program_url = scrapy.Field()
