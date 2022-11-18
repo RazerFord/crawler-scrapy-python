@@ -10,3 +10,4 @@ class NetologyItem(scrapy.Item):
     program_id = scrapy.Field()
     program_name = scrapy.Field()
     program_url = scrapy.Field()
+    program_reviews = scrapy.Field(serializer=str)
