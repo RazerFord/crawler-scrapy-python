@@ -17,3 +17,6 @@ Click right mouse, choouse css selector
 
 # Start spider and save in csv
 `scrapy runspider ./netology/netology/spiders/programs.py -o prog.csv`
+
+# Start spider
+`scrapy crawl programs`
