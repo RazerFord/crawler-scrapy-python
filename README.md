@@ -20,3 +20,9 @@ Click right mouse, choouse css selector
 
 # Start spider
 `scrapy crawl programs`
+
+# For extract first
+`extract_first()` in selectors
+
+# Идеи
+Добавить еще одного паука, чтобы он собирал информацию с каждой странички сайта
