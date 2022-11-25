@@ -17,4 +17,4 @@ class NetologyPipeline:
             raise ItemAdapter("Duplicate item found: %s" % item)
         else:
             self.ids_seen.add(item['program_id'])
-            return item
+        return item

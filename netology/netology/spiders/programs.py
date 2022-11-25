@@ -17,7 +17,7 @@ def get_scraperapi_url(url):
 class ProgramsSpider(scrapy.Spider):
     name = "programs"
 
-    allowed_domains = ["netology.ru"]
+    allowed_domains = ["api.scraperapi.com", "netology.ru"]
 
     custom_settings = {
         "FEEDS": {
@@ -42,27 +42,29 @@ class ProgramsSpider(scrapy.Spider):
             item["program_reviews"] = program["url"].split("/")[-1]
             items.append(item)
 
-        for item in items:
-            yield self.getReviewsOfCourse(item['program_reviews'])
-
-        for item in items:
-            yield item
-
-    def getReviewsOfCourse(self, name):
-        url = get_scraperapi_url(
-            "https://netology.ru/backend/api/page_contents/" + name
-        )
-
+        # for item in items:
+        url = "https://netology.ru/backend/api/page_contents/marketing-director"
         request = scrapy.Request(url, callback=self.getReviews)
-
+        request.cb_kwargs["item"] = items[0]
         yield request
 
-    def getReviews(self, response):
+    def getReviews(self, response, item):
         raw_data = response.body
         data = json.loads(raw_data)
-        components = data['content']['_componentOrders']
-        reviews = []
+        components = data["content"]["_componentOrders"]
+        reviews_id = []
         for component in components:
             if "studentsReviews" in component:
-                reviews.append(component)
-        # yield reviews
+                reviews_id.append(component)
+        contents = data["content"]
+        reviews = []
+        for review in reviews_id:
+            if review in contents:
+                reviews.append(
+                    [
+                        {"name": x["name"], "text": x["text"]}
+                        for x in contents[review]["reviews"]
+                    ]
+                )
+
+        yield item
