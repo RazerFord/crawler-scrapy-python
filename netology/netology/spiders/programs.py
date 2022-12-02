@@ -30,6 +30,12 @@ class ProgramsSpider(scrapy.Spider):
 
     start_urls = [get_scraperapi_url("https://netology.ru/backend/api/programs")]
 
+    # program_description = scrapy.Field(serializer=str)
+    # program_key_skills = scrapy.Field(serializer=str)
+    # program_programs = scrapy.Field(serializer=str)  # courseFeaturesWithImages
+    # program_level_of_training = scrapy.Field(serializer=str)  # coursePresentation
+    # program_reviews = scrapy.Field(serializer=str)
+
     def parse(self, response):
         raw_data = response.body
         data = json.loads(raw_data)
@@ -38,6 +44,21 @@ class ProgramsSpider(scrapy.Spider):
             item = NetologyItem()
             item["program_id"] = program["id"]
             item["program_name"] = program["name"]
+            
+            item["program_duration"] = {
+                "duration": program["duration"],
+                "projects_amount": program["projects_amount"],
+            }
+
+            item["program_cost"] = {
+                "initial_price": program["initial_price"],
+                "current_price": program["current_price"],
+            }
+
+            item["program_level_of_training"] = {
+                "rank": program["rank"]
+            }
+            
             item["program_url"] = "https:" + program["url"]
             item["program_reviews"] = program["url"].split("/")[-1]
             items.append(item)
