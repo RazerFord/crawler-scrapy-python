@@ -30,11 +30,9 @@ class ProgramsSpider(scrapy.Spider):
 
     start_urls = [get_scraperapi_url("https://netology.ru/backend/api/programs")]
 
-    # program_description = scrapy.Field(serializer=str)
     # program_key_skills = scrapy.Field(serializer=str)
     # program_programs = scrapy.Field(serializer=str)  # courseFeaturesWithImages
     # program_level_of_training = scrapy.Field(serializer=str)  # coursePresentation
-    # program_reviews = scrapy.Field(serializer=str)
 
     def parse(self, response):
         raw_data = response.body
@@ -55,16 +53,20 @@ class ProgramsSpider(scrapy.Spider):
                 "current_price": program["current_price"],
             }
 
+            item["program_directions"] = program["directions"]
+
             item["program_level_of_training"] = {
                 "rank": program["rank"]
             }
             
+            item['program_description'] = [program['description']]
+
             item["program_url"] = "https:" + program["url"]
             item["program_reviews"] = program["url"].split("/")[-1]
             items.append(item)
 
         # for item in items:
-        url = "https://netology.ru/backend/api/page_contents/marketing-director"
+        url = "https://netology.ru/backend/api/page_contents/marketing-start"
         request = scrapy.Request(url, callback=self.getReviews)
         request.cb_kwargs["item"] = items[0]
         yield request
@@ -72,12 +74,21 @@ class ProgramsSpider(scrapy.Spider):
     def getReviews(self, response, item):
         raw_data = response.body
         data = json.loads(raw_data)
+        if data['content'] is None:
+            yield item
+
         components = data["content"]["_componentOrders"]
+
         reviews_id = []
+        description_id = []
+
         for component in components:
             if "studentsReviews" in component:
                 reviews_id.append(component)
+            if "courseDescriptionText" in component:
+                description_id.append(component)
         contents = data["content"]
+        
         reviews = []
         for review in reviews_id:
             if review in contents:
@@ -87,5 +98,14 @@ class ProgramsSpider(scrapy.Spider):
                         for x in contents[review]["reviews"]
                     ]
                 )
+        item['program_reviews'] = reviews
+        
+        descriptions = item['program_description']
+        for description in description_id:
+            if description in contents:
+                descriptions.append(
+                    contents[description]['text'] + contents[description]['title']
+                )
+        item['program_description'] = descriptions
 
         yield item
