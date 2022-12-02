@@ -58,17 +58,31 @@ class ProgramsSpider(scrapy.Spider):
             item["program_url"] = "https:" + program["url"]
             items.append(item)
 
-        # for item in items:
-        url = "https://netology.ru/backend/api/page_contents/" + items[0]["program_url"].split('/')[-1]
-        request = scrapy.Request(url, callback=self.getReviews)
-        request.cb_kwargs["item"] = items[0]
-        yield request
+        for item in items:
+            url = (
+                "https://netology.ru/backend/api/page_contents/"
+                + item["program_url"].split("/")[-1]
+            )
+            request = scrapy.Request(url, callback=self.getReviews)
+            request.cb_kwargs["item"] = item
+            yield request
 
     def getReviews(self, response, item):
         raw_data = response.body
-        data = json.loads(raw_data)
-        if data["content"] is None:
+
+        if len(raw_data) == 0:
             yield item
+            return
+
+        data = json.loads(raw_data)
+
+        if (
+            data is None
+            or data["content"] is None
+            or "_componentOrders" not in data["content"]
+        ):
+            yield item
+            return
 
         components = data["content"]["_componentOrders"]
 
