@@ -30,10 +30,6 @@ class ProgramsSpider(scrapy.Spider):
 
     start_urls = [get_scraperapi_url("https://netology.ru/backend/api/programs")]
 
-    # program_key_skills = scrapy.Field(serializer=str)
-    # program_programs = scrapy.Field(serializer=str)  # courseFeaturesWithImages
-    # program_level_of_training = scrapy.Field(serializer=str)  # coursePresentation
-
     def parse(self, response):
         raw_data = response.body
         data = json.loads(raw_data)
@@ -42,7 +38,7 @@ class ProgramsSpider(scrapy.Spider):
             item = NetologyItem()
             item["program_id"] = program["id"]
             item["program_name"] = program["name"]
-            
+
             item["program_duration"] = {
                 "duration": program["duration"],
                 "projects_amount": program["projects_amount"],
@@ -55,18 +51,15 @@ class ProgramsSpider(scrapy.Spider):
 
             item["program_directions"] = program["directions"]
 
-            item["program_level_of_training"] = {
-                "rank": program["rank"]
-            }
-            
-            item['program_description'] = [program['description']]
+            item["program_level_of_training"] = {"rank": program["rank"]}
+
+            item["program_description"] = [program["description"]]
 
             item["program_url"] = "https:" + program["url"]
-            item["program_reviews"] = program["url"].split("/")[-1]
             items.append(item)
 
         # for item in items:
-        url = "https://netology.ru/backend/api/page_contents/marketing-start"
+        url = "https://netology.ru/backend/api/page_contents/" + items[0]["program_url"].split('/')[-1]
         request = scrapy.Request(url, callback=self.getReviews)
         request.cb_kwargs["item"] = items[0]
         yield request
@@ -74,21 +67,24 @@ class ProgramsSpider(scrapy.Spider):
     def getReviews(self, response, item):
         raw_data = response.body
         data = json.loads(raw_data)
-        if data['content'] is None:
+        if data["content"] is None:
             yield item
 
         components = data["content"]["_componentOrders"]
 
         reviews_id = []
         description_id = []
-
+        course_features_id = []
         for component in components:
             if "studentsReviews" in component:
                 reviews_id.append(component)
             if "courseDescriptionText" in component:
                 description_id.append(component)
+            if "courseFeaturesWithImages" in component:
+                course_features_id.append(component)
+
         contents = data["content"]
-        
+
         reviews = []
         for review in reviews_id:
             if review in contents:
@@ -98,14 +94,34 @@ class ProgramsSpider(scrapy.Spider):
                         for x in contents[review]["reviews"]
                     ]
                 )
-        item['program_reviews'] = reviews
-        
-        descriptions = item['program_description']
+        item["program_reviews"] = reviews
+
+        descriptions = item["program_description"]
         for description in description_id:
             if description in contents:
                 descriptions.append(
-                    contents[description]['text'] + contents[description]['title']
+                    contents[description]["text"] + contents[description]["title"]
                 )
-        item['program_description'] = descriptions
+        item["program_description"] = descriptions
+
+        course_features = []
+        for course_feature in course_features_id:
+            if course_feature in contents:
+                course_features.append(
+                    [
+                        {"title": item["title"], "description": item["description"]}
+                        for item in contents[course_feature]["items"]
+                    ]
+                )
+        item["program_programs"] = course_features
+
+        if (
+            "coursePresentation" in contents
+            and "stats" in contents["coursePresentation"]
+        ):
+            stats = contents["coursePresentation"]["stats"]
+            for stat in stats:
+                if "Уровень" in stat["title"]:
+                    item["program_level_of_training"] = stat["value"]
 
         yield item

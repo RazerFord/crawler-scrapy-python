@@ -11,7 +11,6 @@ class NetologyItem(scrapy.Item):
     program_name = scrapy.Field()
     program_url = scrapy.Field()
     program_description = scrapy.Field(serializer=str)
-    program_key_skills = scrapy.Field(serializer=str)
     program_programs = scrapy.Field(serializer=str)  # courseFeaturesWithImages
     program_directions = scrapy.Field(serializer=str)
     program_duration = scrapy.Field(serializer=str)
