@@ -6,15 +6,16 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-
+from scrapy.exceptions import DropItem
 
 class NetologyPipeline:
     def __init__(self):
         self.ids_seen = set()
 
     def process_item(self, item, spider):
-        if item['program_id'] in self.ids_seen:
-            raise ItemAdapter("Duplicate item found: %s" % item)
+        adapter = ItemAdapter(item)
+        if adapter['program_id'] in self.ids_seen:
+            raise DropItem(f"Duplicate item found: {item!r}")
         else:
-            self.ids_seen.add(item['program_id'])
+            self.ids_seen.add(adapter['program_id'])
         return item

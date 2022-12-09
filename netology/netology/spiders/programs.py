@@ -2,6 +2,18 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
+from scrapy.loader import ItemLoader
+
+from w3lib.html import remove_tags
+import unicodedata
+
+
+def clear(text):
+    if text is None:
+        return None
+    empty = ""
+    unicodedata.normalize("NFKD", remove_tags(empty.join(text)))
+
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 
@@ -63,11 +75,11 @@ class ProgramsSpider(scrapy.Spider):
                 "https://netology.ru/backend/api/page_contents/"
                 + item["program_url"].split("/")[-1]
             )
-            request = scrapy.Request(url, callback=self.getReviews)
+            request = scrapy.Request(url, callback=self.getInformation)
             request.cb_kwargs["item"] = item
             yield request
 
-    def getReviews(self, response, item):
+    def getInformation(self, response, item):
         raw_data = response.body
 
         if len(raw_data) == 0:
@@ -89,6 +101,7 @@ class ProgramsSpider(scrapy.Spider):
         reviews_id = []
         description_id = []
         course_features_id = []
+
         for component in components:
             if "studentsReviews" in component:
                 reviews_id.append(component)
@@ -104,7 +117,10 @@ class ProgramsSpider(scrapy.Spider):
             if review in contents:
                 reviews.append(
                     [
-                        {"name": x["name"], "text": x["text"]}
+                        {
+                            "name": x["name"],
+                            "text": x["text"],
+                        }
                         for x in contents[review]["reviews"]
                     ]
                 )
@@ -123,7 +139,10 @@ class ProgramsSpider(scrapy.Spider):
             if course_feature in contents:
                 course_features.append(
                     [
-                        {"title": item["title"], "description": item["description"]}
+                        {
+                            "title": item["title"],
+                            "description": item["description"],
+                        }
                         for item in contents[course_feature]["items"]
                     ]
                 )
