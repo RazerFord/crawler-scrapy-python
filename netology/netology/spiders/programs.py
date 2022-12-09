@@ -2,20 +2,21 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
-from scrapy.loader import ItemLoader
-
 from w3lib.html import remove_tags
 import unicodedata
-
-
-def clear(text):
-    if text is None:
-        return None
-    empty = ""
-    unicodedata.normalize("NFKD", remove_tags(empty.join(text)))
-
+from scrapy import Selector
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
+
+
+def clear(text_):
+    empty = ""
+    if text_ is None:
+        return empty
+    return unicodedata.normalize(
+        "NFKD",
+        empty.join(Selector(text=text_).xpath("//body//text()").extract()).strip(),
+    )
 
 
 def get_scraperapi_url(url):
@@ -65,7 +66,7 @@ class ProgramsSpider(scrapy.Spider):
 
             item["program_level_of_training"] = {"rank": program["rank"]}
 
-            item["program_description"] = [program["description"]]
+            item["program_description"] = [clear(program["description"])]
 
             item["program_url"] = "https:" + program["url"]
             items.append(item)
@@ -118,8 +119,8 @@ class ProgramsSpider(scrapy.Spider):
                 reviews.append(
                     [
                         {
-                            "name": x["name"],
-                            "text": x["text"],
+                            "name": clear(x["name"]),
+                            "text": clear(x["text"]),
                         }
                         for x in contents[review]["reviews"]
                     ]
@@ -129,9 +130,12 @@ class ProgramsSpider(scrapy.Spider):
         descriptions = item["program_description"]
         for description in description_id:
             if description in contents:
-                descriptions.append(
+                text = clear(
                     contents[description]["text"] + contents[description]["title"]
                 )
+                if text is None:
+                    continue
+                descriptions.append(text)
         item["program_description"] = descriptions
 
         course_features = []
@@ -141,7 +145,7 @@ class ProgramsSpider(scrapy.Spider):
                     [
                         {
                             "title": item["title"],
-                            "description": item["description"],
+                            "description": clear(item["description"]),
                         }
                         for item in contents[course_feature]["items"]
                     ]
@@ -155,6 +159,6 @@ class ProgramsSpider(scrapy.Spider):
             stats = contents["coursePresentation"]["stats"]
             for stat in stats:
                 if "Уровень" in stat["title"]:
-                    item["program_level_of_training"] = stat["value"]
+                    item["program_level_of_training"] = clear(stat["value"])
 
         yield item
