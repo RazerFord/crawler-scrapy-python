@@ -2,8 +2,21 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
+from w3lib.html import remove_tags
+import unicodedata
+from scrapy import Selector
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
+
+
+def clear(text_):
+    if text_ is None:
+        return ""
+    sep = "\n"
+    return unicodedata.normalize(
+        "NFKD",
+        sep.join(Selector(text=text_).xpath("//body//text()").extract()).strip(),
+    )
 
 
 def get_scraperapi_url(url):
@@ -17,7 +30,7 @@ def get_scraperapi_url(url):
 class ProgramsSpider(scrapy.Spider):
     name = "programs"
 
-    allowed_domains = ["netology.ru"]
+    allowed_domains = ["api.scraperapi.com", "netology.ru"]
 
     custom_settings = {
         "FEEDS": {
@@ -38,31 +51,114 @@ class ProgramsSpider(scrapy.Spider):
             item = NetologyItem()
             item["program_id"] = program["id"]
             item["program_name"] = program["name"]
+
+            item["program_duration"] = {
+                "duration": program["duration"],
+                "projects_amount": program["projects_amount"],
+            }
+
+            item["program_cost"] = {
+                "initial_price": program["initial_price"],
+                "current_price": program["current_price"],
+            }
+
+            item["program_directions"] = program["directions"]
+
+            item["program_level_of_training"] = {"rank": program["rank"]}
+
+            item["program_description"] = [clear(program["description"])]
+
             item["program_url"] = "https:" + program["url"]
-            item["program_reviews"] = program["url"].split("/")[-1]
             items.append(item)
 
         for item in items:
-            yield self.getReviewsOfCourse(item['program_reviews'])
+            url = (
+                "https://netology.ru/backend/api/page_contents/"
+                + item["program_url"].split("/")[-1]
+            )
+            request = scrapy.Request(url, callback=self.getInformation)
+            request.cb_kwargs["item"] = item
+            yield request
 
-        for item in items:
-            yield item
-
-    def getReviewsOfCourse(self, name):
-        url = get_scraperapi_url(
-            "https://netology.ru/backend/api/page_contents/" + name
-        )
-
-        request = scrapy.Request(url, callback=self.getReviews)
-
-        yield request
-
-    def getReviews(self, response):
+    def getInformation(self, response, item):
         raw_data = response.body
+
+        if len(raw_data) == 0:
+            yield item
+            return
+
         data = json.loads(raw_data)
-        components = data['content']['_componentOrders']
-        reviews = []
+
+        if (
+            data is None
+            or data["content"] is None
+            or "_componentOrders" not in data["content"]
+        ):
+            yield item
+            return
+
+        components = data["content"]["_componentOrders"]
+
+        reviews_id = []
+        description_id = []
+        course_features_id = []
+
         for component in components:
             if "studentsReviews" in component:
-                reviews.append(component)
-        # yield reviews
+                reviews_id.append(component)
+            if "courseDescriptionText" in component:
+                description_id.append(component)
+            if "courseFeaturesWithImages" in component:
+                course_features_id.append(component)
+
+        contents = data["content"]
+
+        reviews = []
+        for review in reviews_id:
+            if review in contents:
+                reviews.append(
+                    [
+                        {
+                            "name": clear(x["name"]),
+                            "text": clear(x["text"]),
+                        }
+                        for x in contents[review]["reviews"]
+                    ]
+                )
+        item["program_reviews"] = reviews
+
+        descriptions = item["program_description"]
+        for description in description_id:
+            if description in contents:
+                text = clear(
+                    contents[description]["text"] + contents[description]["title"]
+                )
+                if text is None:
+                    continue
+                descriptions.append(text)
+        item["program_description"] = descriptions
+
+        course_features = []
+        for course_feature in course_features_id:
+            if course_feature in contents:
+                course_features.append(
+                    [
+                        {
+                            "title": clear(item["title"]),
+                            "description": clear(item["description"]),
+                        }
+                        for item in contents[course_feature]["items"]
+                    ]
+                )
+        item["program_programs"] = course_features
+
+        if (
+            "coursePresentation" in contents
+            and "stats" in contents["coursePresentation"]
+        ):
+            stats = contents["coursePresentation"]["stats"]
+            for stat in stats:
+                if "Уровень" in stat["title"]:
+                    item["program_level_of_training"] = clear(stat["value"])
+
+        yield item
