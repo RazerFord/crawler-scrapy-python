@@ -10,12 +10,12 @@ API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 
 
 def clear(text_):
-    empty = ""
     if text_ is None:
-        return empty
+        return ""
+    sep = "\n"
     return unicodedata.normalize(
         "NFKD",
-        empty.join(Selector(text=text_).xpath("//body//text()").extract()).strip(),
+        sep.join(Selector(text=text_).xpath("//body//text()").extract()).strip(),
     )
 
 
@@ -144,7 +144,7 @@ class ProgramsSpider(scrapy.Spider):
                 course_features.append(
                     [
                         {
-                            "title": item["title"],
+                            "title": clear(item["title"]),
                             "description": clear(item["description"]),
                         }
                         for item in contents[course_feature]["items"]
