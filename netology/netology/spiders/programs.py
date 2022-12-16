@@ -2,9 +2,9 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
-from w3lib.html import remove_tags
-import unicodedata
 from scrapy import Selector
+import html2text
+
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 
@@ -12,11 +12,9 @@ API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 def clear(text_):
     if text_ is None:
         return ""
-    sep = "\n"
-    return unicodedata.normalize(
-        "NFKD",
-        sep.join(Selector(text=text_).xpath("//body//text()").extract()).strip(),
-    )
+    h = html2text.HTML2Text()
+    h.ignore_links = True
+    return h.handle(text_)
 
 
 def get_scraperapi_url(url):
@@ -61,7 +59,7 @@ class ProgramsSpider(scrapy.Spider):
                 "current_price": program["current_price"],
             }
             item["program_directions"] = program["directions"]
-            item["program_level_of_training"] = {"rank": program["rank"]}
+            item["program_level_of_training"] = program["rank"]
             item["program_description"] = [clear(program["description"])]
             item["program_url"] = "https:" + program["url"]
 
