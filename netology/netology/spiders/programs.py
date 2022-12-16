@@ -34,8 +34,8 @@ class ProgramsSpider(scrapy.Spider):
 
     custom_settings = {
         "FEEDS": {
-            "items.csv": {
-                "format": "csv",
+            "items.json": {
+                "format": "json",
                 "store_empty": False,
             }
         }
@@ -49,26 +49,22 @@ class ProgramsSpider(scrapy.Spider):
         items = []
         for program in data:
             item = NetologyItem()
+
             item["program_id"] = program["id"]
             item["program_name"] = program["name"]
-
             item["program_duration"] = {
                 "duration": program["duration"],
                 "projects_amount": program["projects_amount"],
             }
-
             item["program_cost"] = {
                 "initial_price": program["initial_price"],
                 "current_price": program["current_price"],
             }
-
             item["program_directions"] = program["directions"]
-
             item["program_level_of_training"] = {"rank": program["rank"]}
-
             item["program_description"] = [clear(program["description"])]
-
             item["program_url"] = "https:" + program["url"]
+
             items.append(item)
 
         for item in items:
@@ -99,20 +95,47 @@ class ProgramsSpider(scrapy.Spider):
 
         components = data["content"]["_componentOrders"]
 
+        reviews_id, descriptions_id, course_features_id = self.getComponentsId(
+            components
+        )
+
+        contents = data["content"]
+
+        item["program_reviews"] = self.getReviews(reviews_id, contents)
+
+        item["program_description"] = self.getDescriptions(
+            item["program_description"], descriptions_id, contents
+        )
+
+        item["program_programs"] = self.getCourseFeatures(course_features_id, contents)
+
+        if (
+            "coursePresentation" in contents
+            and "stats" in contents["coursePresentation"]
+        ):
+            stats = contents["coursePresentation"]["stats"]
+            for stat in stats:
+                if "Уровень" in stat["title"]:
+                    item["program_level_of_training"] = clear(stat["value"])
+
+        yield item
+
+    def getComponentsId(self, components):
         reviews_id = []
-        description_id = []
+        descriptions_id = []
         course_features_id = []
 
         for component in components:
             if "studentsReviews" in component:
                 reviews_id.append(component)
             if "courseDescriptionText" in component:
-                description_id.append(component)
+                descriptions_id.append(component)
             if "courseFeaturesWithImages" in component:
                 course_features_id.append(component)
 
-        contents = data["content"]
+        return reviews_id, descriptions_id, course_features_id
 
+    def getReviews(self, reviews_id, contents):
         reviews = []
         for review in reviews_id:
             if review in contents:
@@ -125,10 +148,10 @@ class ProgramsSpider(scrapy.Spider):
                         for x in contents[review]["reviews"]
                     ]
                 )
-        item["program_reviews"] = reviews
+        return reviews
 
-        descriptions = item["program_description"]
-        for description in description_id:
+    def getDescriptions(self, descriptions, descriptions_id, contents):
+        for description in descriptions_id:
             if description in contents:
                 text = clear(
                     contents[description]["text"] + contents[description]["title"]
@@ -136,8 +159,9 @@ class ProgramsSpider(scrapy.Spider):
                 if text is None:
                     continue
                 descriptions.append(text)
-        item["program_description"] = descriptions
+        return descriptions
 
+    def getCourseFeatures(self, course_features_id, contents):
         course_features = []
         for course_feature in course_features_id:
             if course_feature in contents:
@@ -150,15 +174,4 @@ class ProgramsSpider(scrapy.Spider):
                         for item in contents[course_feature]["items"]
                     ]
                 )
-        item["program_programs"] = course_features
-
-        if (
-            "coursePresentation" in contents
-            and "stats" in contents["coursePresentation"]
-        ):
-            stats = contents["coursePresentation"]["stats"]
-            for stat in stats:
-                if "Уровень" in stat["title"]:
-                    item["program_level_of_training"] = clear(stat["value"])
-
-        yield item
+        return course_features
