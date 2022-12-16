@@ -93,9 +93,12 @@ class ProgramsSpider(scrapy.Spider):
 
         components = data["content"]["_componentOrders"]
 
-        reviews_id, descriptions_id, course_features_id = self.getComponentsId(
-            components
-        )
+        (
+            reviews_id,
+            descriptions_id,
+            course_features_id,
+            course_modules_id,
+        ) = self.getComponentsId(components)
 
         contents = data["content"]
 
@@ -106,6 +109,8 @@ class ProgramsSpider(scrapy.Spider):
         )
 
         item["program_programs"] = self.getCourseFeatures(course_features_id, contents)
+
+        item["program_modules"] = self.getProgramModules(course_modules_id, contents)
 
         if (
             "coursePresentation" in contents
@@ -122,6 +127,7 @@ class ProgramsSpider(scrapy.Spider):
         reviews_id = []
         descriptions_id = []
         course_features_id = []
+        course_modules_id = []
 
         for component in components:
             if "studentsReviews" in component:
@@ -130,8 +136,10 @@ class ProgramsSpider(scrapy.Spider):
                 descriptions_id.append(component)
             if "courseFeaturesWithImages" in component:
                 course_features_id.append(component)
+            if "programModule" in component:
+                course_modules_id.append(component)
 
-        return reviews_id, descriptions_id, course_features_id
+        return reviews_id, descriptions_id, course_features_id, course_modules_id
 
     def getReviews(self, reviews_id, contents):
         reviews = []
@@ -173,3 +181,30 @@ class ProgramsSpider(scrapy.Spider):
                     ]
                 )
         return course_features
+
+    def getProgramModules(self, course_modules_id, contents):
+        modules = []
+        for course_module in course_modules_id:
+            if course_module in contents and "blocks":
+                text = ""
+                for block in contents[course_module]["blocks"]:
+                    title = ""
+                    if "title" in block:
+                        title = clear(block["title"])
+                    lessons = ""
+                    if "lessons" in block:
+                        for lesson in block["lessons"]:
+                            lessons += (
+                                clear(lesson["title"] if "title" in lesson else "")
+                                + "\n"
+                                + clear(
+                                    lesson["description"]
+                                    if "description" in lesson
+                                    else ""
+                                )
+                            )
+                    text = title + lessons
+                if text != "":
+                    modules.append(text)
+
+        return modules
