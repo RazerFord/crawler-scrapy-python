@@ -59,7 +59,7 @@ class ProgramsSpider(scrapy.Spider):
                 "current_price": program["current_price"],
             }
             item["program_directions"] = program["directions"]
-            item["program_level_of_training"] = program["rank"]
+            item["program_level_of_training"] = program["educational_level"]
             item["program_description"] = [clear(program["description"])]
             item["program_url"] = "https:" + program["url"]
 
@@ -111,15 +111,6 @@ class ProgramsSpider(scrapy.Spider):
         item["program_programs"] = self.getCourseFeatures(course_features_id, contents)
 
         item["program_modules"] = self.getProgramModules(course_modules_id, contents)
-
-        if (
-            "coursePresentation" in contents
-            and "stats" in contents["coursePresentation"]
-        ):
-            stats = contents["coursePresentation"]["stats"]
-            for stat in stats:
-                if "Уровень" in stat["title"]:
-                    item["program_level_of_training"] = clear(stat["value"])
 
         yield item
 
