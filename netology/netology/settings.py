@@ -64,6 +64,7 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "netology.pipelines.NetologyPipeline": 300,
+    "netology.pipelines.DatabasePipeline": 350
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
