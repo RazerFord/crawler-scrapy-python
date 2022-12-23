@@ -17,6 +17,7 @@ class NetologyItem(scrapy.Item):
     program_url = scrapy.Field()
     program_description = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
     program_programs = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
+    program_modules = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
     program_directions = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
     program_duration = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
     program_cost = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
