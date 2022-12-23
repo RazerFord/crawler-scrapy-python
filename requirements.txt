@@ -9,6 +9,7 @@ constantly==15.1.0
 cryptography==38.0.3
 cssselect==1.2.0
 filelock==3.8.0
+greenlet==2.0.1
 html2text==2020.1.16
 hyperlink==21.0.0
 idna==3.4
@@ -25,6 +26,7 @@ parsel==1.7.0
 pathspec==0.10.2
 platformdirs==2.5.4
 Protego==0.2.1
+psycopg2-binary==2.9.5
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
@@ -38,6 +40,7 @@ requests-file==1.5.1
 Scrapy==2.7.1
 service-identity==21.1.0
 six==1.16.0
+SQLAlchemy==1.4.45
 tldextract==3.4.0
 tomli==2.0.1
 tqdm==4.64.1
