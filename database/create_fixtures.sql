@@ -6,6 +6,14 @@ CREATE TABLE
         url TEXT NOT NULL
     );
 
+INSERT INTO source (id, url)
+SELECT 1, 'netology'
+WHERE NOT EXISTS (
+        SELECT id
+        FROM source
+        WHERE id = 1
+    );
+
 CREATE TABLE
     IF NOT EXISTS level (
         id BIGINT PRIMARY KEY,
@@ -17,7 +25,7 @@ CREATE TABLE
         id BIGINT PRIMARY KEY,
         source_id BIGINT REFERENCES source (id) ON UPDATE CASCADE,
         url TEXT NOT NULL,
-        last_update TIMESTAMP NOT NULL,
+        last_update TIMESTAMP DEFAULT NOW(),
         duration TEXT,
         level_id BIGINT REFERENCES level (id) ON UPDATE CASCADE,
         price NUMERIC DEFAULT 0,
@@ -46,7 +54,11 @@ CREATE TABLE
     );
 
 -- DROP TABLE IF EXISTS level;
+
 -- DROP TABLE IF EXISTS course_metadata;
+
 -- DROP TABLE IF EXISTS reviews;
+
 -- DROP TABLE IF EXISTS course_row;
+
 -- DROP TABLE IF EXISTS source;
