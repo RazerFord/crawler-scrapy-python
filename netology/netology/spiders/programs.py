@@ -88,7 +88,7 @@ class ProgramsSpider(scrapy.Spider):
             item["program_programs"] = courseJson.getCourseFeatures()
 
             item["program_modules"] = courseJson.getProgramModules()
-        except ValueError as e:
-            print(e)
+        except ValueError as error:
+            print(error)
 
         yield item

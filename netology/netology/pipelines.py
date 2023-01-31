@@ -39,6 +39,18 @@ class DatabasePipeline:
             print("open database connection")
         except Exception:
             print("error database connection")
+        
+        self.source_id = self.getSourceId()
+
+    def getSourceId(self):
+        SQL = """SELECT * FROM source
+        WHERE url ILIKE %s"""
+
+        url = "netology"
+
+        self.cur.execute(SQL, [url])
+
+        return self.cur.fetchone()[0]
 
     def close_spider(self, spider):
         if self.cur is not None:
@@ -102,7 +114,7 @@ class DatabasePipeline:
             self.courseIds.add(adapter["program_id"])
             self.insertIntoCourseMetaDataIfNotExists(
                 id=adapter["program_id"],
-                source_id="1",
+                source_id=self.source_id,
                 url=adapter["program_url"],
                 duration=self.ifKeyExists(adapter["program_duration"], "duration", 0),
                 level_id=self.ifKeyExists(
@@ -144,10 +156,9 @@ class DatabasePipeline:
         print(adapter["program_id"], adapter["program_name"], "save course row")
         self.connection.commit()
 
-        pass
-
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
+        
         try:
             # Save level course
             self.saveLevel(adapter)
