@@ -40,7 +40,8 @@ class ProgramsSpider(scrapy.Spider):
         }
     }
 
-    start_urls = [get_scraperapi_url("https://netology.ru/backend/api/programs")]
+    start_urls = [get_scraperapi_url(
+        "https://netology.ru/backend/api/programs")]
 
     def parse(self, response):
         raw_data = response.body
@@ -71,6 +72,8 @@ class ProgramsSpider(scrapy.Spider):
                 "https://netology.ru/backend/api/page_contents/"
                 + item["program_url"].split("/")[-1]
             )
+        # if True:
+        #     url = 'https://netology.ru/backend/api/page_contents/excelpbi'
             request = scrapy.Request(url, callback=self.getInformation)
             request.cb_kwargs["item"] = item
             yield request

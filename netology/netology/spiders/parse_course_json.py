@@ -1,12 +1,14 @@
 import json
 import html2text
 
+
 def clear(text_):
     if text_ is None:
         return ""
     h = html2text.HTML2Text()
     h.ignore_links = True
     return h.handle(text_)
+
 
 class CourseJson:
     def __init__(self, response):
@@ -32,7 +34,6 @@ class CourseJson:
 
         self.contents = data["content"]
 
-
     def setComponentsId(self, components):
         self.reviews_id = []
         self.descriptions_id = []
@@ -48,7 +49,6 @@ class CourseJson:
                 self.course_features_id.append(component)
             if "programModule" in component:
                 self.course_modules_id.append(component)
-    
 
     def getReviews(self):
         reviews = []
@@ -64,18 +64,19 @@ class CourseJson:
                     ]
                 )
         return reviews
-    
+
     def getDescriptions(self, descriptions):
         for description in self.descriptions_id:
             if description in self.contents:
                 text = clear(
-                    self.contents[description]["text"] + self.contents[description]["title"]
+                    self.contents[description]["text"] +
+                    self.contents[description]["title"]
                 )
                 if text is None:
                     continue
                 descriptions.append(text)
         return descriptions
-    
+
     def getCourseFeatures(self):
         course_features = []
         for course_feature in self.course_features_id:
@@ -90,7 +91,7 @@ class CourseJson:
                     ]
                 )
         return course_features
-    
+
     def getCourseFeatures(self):
         course_features = []
         for course_feature in self.course_features_id:
@@ -109,26 +110,28 @@ class CourseJson:
     def getProgramModules(self):
         modules = []
         for course_module in self.course_modules_id:
-            if course_module in self.contents and "blocks":
-                text = ""
+            if course_module in self.contents and "blocks" in self.contents[course_module]:
+                module = {}
                 for block in self.contents[course_module]["blocks"]:
-                    title = ""
                     if "title" in block:
-                        title = clear(block["title"])
-                    lessons = ""
+                        module["title"] = clear(block["title"])
+
                     if "lessons" in block:
+                        module["lessons"] = ""
                         for lesson in block["lessons"]:
-                            lessons += (
-                                clear(lesson["title"] if "title" in lesson else "")
-                                + "\n"
+                            module["lessons"] += (
+                                clear(lesson["title"] + "\n"
+                                      if "title" in lesson else "")
                                 + clear(
                                     lesson["description"]
                                     if "description" in lesson
                                     else ""
                                 )
                             )
-                    text = title + lessons
-                if text != "":
-                    modules.append(text)
+
+                    if "description" in block:
+                        module["description"] = clear(block["description"])
+                if module != {}:
+                    modules.append(module)
 
         return modules

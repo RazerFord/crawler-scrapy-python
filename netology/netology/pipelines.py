@@ -8,7 +8,7 @@
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 import psycopg2
-
+import traceback
 
 class NetologyPipeline:
     def __init__(self):
@@ -39,7 +39,7 @@ class DatabasePipeline:
             print("open database connection")
         except Exception:
             print("error database connection")
-        
+
         self.source_id = self.getSourceId()
 
     def getSourceId(self):
@@ -62,7 +62,7 @@ class DatabasePipeline:
         return default if value is None else value
 
     def ifKeyExists(self, value, key, default):
-        if key in value:
+        if value is not None and key in value:
             return value[key]
         return default
 
@@ -79,6 +79,7 @@ class DatabasePipeline:
 
     def saveLevel(self, adapter):
         if (
+            "program_level_of_training" in adapter and
             adapter["program_level_of_training"] is not None
             and adapter["program_level_of_training"]["id"] not in self.levelIds
         ):
@@ -108,6 +109,7 @@ class DatabasePipeline:
 
     def saveMetadata(self, adapter):
         if (
+            "program_id" in adapter and
             adapter["program_id"] is not None
             and adapter["program_id"] not in self.courseIds
         ):
@@ -116,7 +118,8 @@ class DatabasePipeline:
                 id=adapter["program_id"],
                 source_id=self.source_id,
                 url=adapter["program_url"],
-                duration=self.ifKeyExists(adapter["program_duration"], "duration", 0),
+                duration=self.ifKeyExists(
+                    adapter["program_duration"], "duration", 0),
                 level_id=self.ifKeyExists(
                     adapter["program_level_of_training"], "id", 1
                 ),
@@ -152,12 +155,12 @@ class DatabasePipeline:
             title=adapter["program_name"],
             section_title=sections,
         )
-        print(adapter["program_id"], adapter["program_name"], "save course row")
+        print(adapter["program_id"],
+              adapter["program_name"], "save course row")
         self.connection.commit()
 
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
-        
         try:
             # Save level course
             self.saveLevel(adapter)
@@ -165,10 +168,11 @@ class DatabasePipeline:
             # Save metadata of course
             self.saveMetadata(adapter)
 
-            # Save course row
+            # Save course raw
             # self.saveCourseRaw(adapter)
 
         except Exception as error:
+            traceback.print_exc()
             print(error)
             print(adapter["program_id"], adapter["program_name"], "not save")
             self.connection.rollback()
