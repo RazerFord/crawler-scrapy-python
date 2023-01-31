@@ -4,6 +4,7 @@ from netology.items import NetologyItem
 from urllib.parse import urlencode
 from scrapy import Selector
 import html2text
+from .parse_course_json import CourseJson
 
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
@@ -75,127 +76,19 @@ class ProgramsSpider(scrapy.Spider):
             yield request
 
     def getInformation(self, response, item):
-        raw_data = response.body
+        try:
+            courseJson = CourseJson(response)
 
-        if len(raw_data) == 0:
-            yield item
-            return
+            item["program_reviews"] = courseJson.getReviews()
 
-        data = json.loads(raw_data)
+            item["program_description"] = courseJson.getDescriptions(
+                item["program_description"]
+            )
 
-        if (
-            data is None
-            or data["content"] is None
-            or "_componentOrders" not in data["content"]
-        ):
-            yield item
-            return
+            item["program_programs"] = courseJson.getCourseFeatures()
 
-        components = data["content"]["_componentOrders"]
-
-        (
-            reviews_id,
-            descriptions_id,
-            course_features_id,
-            course_modules_id,
-        ) = self.getComponentsId(components)
-
-        contents = data["content"]
-
-        item["program_reviews"] = self.getReviews(reviews_id, contents)
-
-        item["program_description"] = self.getDescriptions(
-            item["program_description"], descriptions_id, contents
-        )
-
-        item["program_programs"] = self.getCourseFeatures(course_features_id, contents)
-
-        item["program_modules"] = self.getProgramModules(course_modules_id, contents)
+            item["program_modules"] = courseJson.getProgramModules()
+        except ValueError as e:
+            print(e)
 
         yield item
-
-    def getComponentsId(self, components):
-        reviews_id = []
-        descriptions_id = []
-        course_features_id = []
-        course_modules_id = []
-
-        for component in components:
-            if "studentsReviews" in component:
-                reviews_id.append(component)
-            if "courseDescriptionText" in component:
-                descriptions_id.append(component)
-            if "courseFeaturesWithImages" in component:
-                course_features_id.append(component)
-            if "programModule" in component:
-                course_modules_id.append(component)
-
-        return reviews_id, descriptions_id, course_features_id, course_modules_id
-
-    def getReviews(self, reviews_id, contents):
-        reviews = []
-        for review in reviews_id:
-            if review in contents:
-                reviews.append(
-                    [
-                        {
-                            "name": clear(x["name"]),
-                            "text": clear(x["text"]),
-                        }
-                        for x in contents[review]["reviews"]
-                    ]
-                )
-        return reviews
-
-    def getDescriptions(self, descriptions, descriptions_id, contents):
-        for description in descriptions_id:
-            if description in contents:
-                text = clear(
-                    contents[description]["text"] + contents[description]["title"]
-                )
-                if text is None:
-                    continue
-                descriptions.append(text)
-        return descriptions
-
-    def getCourseFeatures(self, course_features_id, contents):
-        course_features = []
-        for course_feature in course_features_id:
-            if course_feature in contents:
-                course_features.append(
-                    [
-                        {
-                            "title": clear(item["title"]),
-                            "description": clear(item["description"]),
-                        }
-                        for item in contents[course_feature]["items"]
-                    ]
-                )
-        return course_features
-
-    def getProgramModules(self, course_modules_id, contents):
-        modules = []
-        for course_module in course_modules_id:
-            if course_module in contents and "blocks":
-                text = ""
-                for block in contents[course_module]["blocks"]:
-                    title = ""
-                    if "title" in block:
-                        title = clear(block["title"])
-                    lessons = ""
-                    if "lessons" in block:
-                        for lesson in block["lessons"]:
-                            lessons += (
-                                clear(lesson["title"] if "title" in lesson else "")
-                                + "\n"
-                                + clear(
-                                    lesson["description"]
-                                    if "description" in lesson
-                                    else ""
-                                )
-                            )
-                    text = title + lessons
-                if text != "":
-                    modules.append(text)
-
-        return modules
