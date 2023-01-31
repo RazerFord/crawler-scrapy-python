@@ -112,7 +112,6 @@ class DatabasePipeline:
                 price_other=adapter["program_cost"]["initial_price"],
             )
             self.connection.commit()
-            # print(adapter["program_id"], adapter["program_name"], "save")
 
     def insertIntoCourseRowIfNotExists(self, **kwargs):
         SQL = """insert into 
@@ -164,15 +163,3 @@ class DatabasePipeline:
             print(adapter["program_id"], adapter["program_name"], "not save")
             self.connection.rollback()
         return item
-
-    # program_id = scrapy.Field()
-    # program_name = scrapy.Field()
-    # program_url = scrapy.Field()
-    # program_description = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_programs = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_modules = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_directions = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_duration = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_cost = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_level_of_training = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
-    # program_reviews = scrapy.Field(input_processor=MapCompose(clear), output_processor=Join())
