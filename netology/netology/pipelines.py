@@ -62,7 +62,7 @@ class DatabasePipeline:
         return default if value is None else value
 
     def ifKeyExists(self, value, key, default):
-        if hasattr(value, key):
+        if key in value:
             return value[key]
         return default
 
@@ -142,7 +142,7 @@ class DatabasePipeline:
         )
         self.cur.execute(SQL, data)
 
-    def saveCourseRow(self, adapter):
+    def saveCourseRaw(self, adapter):
         sections = ""
         for section in adapter["program_directions"]:
             if "name" in section:
@@ -151,7 +151,6 @@ class DatabasePipeline:
             id=adapter["program_id"],
             title=adapter["program_name"],
             section_title=sections,
-            
         )
         print(adapter["program_id"], adapter["program_name"], "save course row")
         self.connection.commit()
@@ -167,7 +166,7 @@ class DatabasePipeline:
             self.saveMetadata(adapter)
 
             # Save course row
-            # self.saveCourseRow(adapter)
+            # self.saveCourseRaw(adapter)
 
         except Exception as error:
             print(error)
