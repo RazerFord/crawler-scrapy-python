@@ -10,6 +10,7 @@ from scrapy.exceptions import DropItem
 import psycopg2
 import traceback
 
+
 class NetologyPipeline:
     def __init__(self):
         self.ids_seen = set()
@@ -66,6 +67,12 @@ class DatabasePipeline:
             return value[key]
         return default
 
+    def selectCourseMetadataWhereUrl(self, url):
+        SQL = """select * from course_metadata
+        where url = %s"""
+        self.cur.execute(SQL, [url])
+        return self.cur.fetchone()
+
     def insertIntoLevelIfNotExists(self, **kwargs):
         SQL = """insert into level(id,text) 
         select %s, %s where not exists 
@@ -79,8 +86,8 @@ class DatabasePipeline:
 
     def saveLevel(self, adapter):
         if (
-            "program_level_of_training" in adapter and
-            adapter["program_level_of_training"] is not None
+            "program_level_of_training" in adapter
+            and adapter["program_level_of_training"] is not None
             and adapter["program_level_of_training"]["id"] not in self.levelIds
         ):
             self.levelIds.add(adapter["program_level_of_training"]["id"])
@@ -92,25 +99,25 @@ class DatabasePipeline:
 
     def insertIntoCourseMetaDataIfNotExists(self, **kwargs):
         SQL = """insert into 
-        course_metadata(id,source_id,url,duration,level_id,price,price_other) 
-        select %s, %s, %s, %s, %s, %s, %s where not exists 
-        (select id from course_metadata where id = %s)"""
+        course_metadata(source_id,url,duration,level_id,price,price_other) 
+        select %s, %s, %s, %s, %s, %s where not exists 
+        (select id from course_metadata where url ILIKE %s)"""
         data = (
-            kwargs["id"],
             kwargs["source_id"],
             kwargs["url"],
             kwargs["duration"],
             kwargs["level_id"],
             kwargs["price"],
             kwargs["price_other"],
-            kwargs["id"],
+            kwargs["url"],
         )
+
         self.cur.execute(SQL, data)
 
     def saveMetadata(self, adapter):
         if (
-            "program_id" in adapter and
-            adapter["program_id"] is not None
+            "program_id" in adapter
+            and adapter["program_id"] is not None
             and adapter["program_id"] not in self.courseIds
         ):
             self.courseIds.add(adapter["program_id"])
@@ -118,8 +125,7 @@ class DatabasePipeline:
                 id=adapter["program_id"],
                 source_id=self.source_id,
                 url=adapter["program_url"],
-                duration=self.ifKeyExists(
-                    adapter["program_duration"], "duration", 0),
+                duration=self.ifKeyExists(adapter["program_duration"], "duration", 0),
                 level_id=self.ifKeyExists(
                     adapter["program_level_of_training"], "id", 1
                 ),
@@ -128,36 +134,41 @@ class DatabasePipeline:
             )
             self.connection.commit()
 
-    def insertIntoCourseRowIfNotExists(self, **kwargs):
+    def insertIntoCourseRawIfNotExists(self, **kwargs):
         SQL = """insert into 
-        course_metadata(id,course_id,title,section_title,preview,description,program) 
-        select %s, %s, %s, %s, %s, %s, %s where not exists
-        (select id from course_metadata where id = %s)"""
+        course_raw(course_id,title,section_title,preview,description,program) 
+        select %s, %s, %s, %s, %s, %s"""
         data = (
-            kwargs["id"],
-            kwargs["id"],
+            kwargs["course_id"],
             kwargs["title"],
             kwargs["section_title"],
             kwargs["preview"],
             kwargs["description"],
             kwargs["program"],
-            kwargs["id"],
         )
         self.cur.execute(SQL, data)
+        self.connection.commit()
 
     def saveCourseRaw(self, adapter):
+        courseId = self.selectCourseMetadataWhereUrl(adapter["program_url"])[0]
+
         sections = ""
         for section in adapter["program_directions"]:
             if "name" in section:
                 sections += section["name"] + ". "
-        self.insertIntoCourseRowIfNotExists(
-            id=adapter["program_id"],
-            title=adapter["program_name"],
-            section_title=sections,
-        )
-        print(adapter["program_id"],
-              adapter["program_name"], "save course row")
-        self.connection.commit()
+
+        if "program_modules" not in adapter:
+            return
+
+        for module in adapter["program_modules"]:
+            self.insertIntoCourseRawIfNotExists(
+                course_id=courseId,
+                title=adapter["program_name"],
+                section_title=sections,
+                preview="",
+                description=module["description"],
+                program=module["lessons"],
+            )
 
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
@@ -169,8 +180,7 @@ class DatabasePipeline:
             self.saveMetadata(adapter)
 
             # Save course raw
-            # self.saveCourseRaw(adapter)
-
+            self.saveCourseRaw(adapter)
         except Exception as error:
             traceback.print_exc()
             print(error)
