@@ -22,7 +22,7 @@ CREATE TABLE
 
 CREATE TABLE
     IF NOT EXISTS course_metadata (
-        id BIGINT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         source_id BIGINT REFERENCES source (id) ON UPDATE CASCADE,
         url TEXT NOT NULL,
         last_update TIMESTAMP DEFAULT NOW(),
@@ -34,8 +34,8 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    IF NOT EXISTS course_row (
-        id BIGINT PRIMARY KEY,
+    IF NOT EXISTS course_raw (
+        id SERIAL PRIMARY KEY,
         course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE,
         title VARCHAR(255) DEFAULT NULL,
         section_title VARCHAR(255) DEFAULT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE
 
 CREATE TABLE
     IF NOT EXISTS reviews (
-        id BIGINT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE,
         text TEXT,
         author VARCHAR(255),
@@ -59,6 +59,6 @@ CREATE TABLE
 
 -- DROP TABLE IF EXISTS reviews;
 
--- DROP TABLE IF EXISTS course_row;
+-- DROP TABLE IF EXISTS course_raw;
 
 -- DROP TABLE IF EXISTS source;
