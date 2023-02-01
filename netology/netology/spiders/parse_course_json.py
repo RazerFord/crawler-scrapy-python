@@ -54,23 +54,21 @@ class CourseJson:
         reviews = []
         for review in self.reviews_id:
             if review in self.contents:
-                reviews.append(
-                    [
-                        {
-                            "name": clear(x["name"]),
-                            "text": clear(x["text"]),
-                        }
-                        for x in self.contents[review]["reviews"]
-                    ]
-                )
+                reviews += [
+                    {
+                        "name": clear(x["name"]),
+                        "text": clear(x["text"]),
+                    }
+                    for x in self.contents[review]["reviews"]
+                ]
         return reviews
 
     def getDescriptions(self, descriptions):
         for description in self.descriptions_id:
             if description in self.contents:
                 text = clear(
-                    self.contents[description]["text"] +
-                    self.contents[description]["title"]
+                    self.contents[description]["text"]
+                    + self.contents[description]["title"]
                 )
                 if text is None:
                     continue
@@ -92,25 +90,13 @@ class CourseJson:
                 )
         return course_features
 
-    def getCourseFeatures(self):
-        course_features = []
-        for course_feature in self.course_features_id:
-            if course_feature in self.contents:
-                course_features.append(
-                    [
-                        {
-                            "title": clear(item["title"]),
-                            "description": clear(item["description"]),
-                        }
-                        for item in self.contents[course_feature]["items"]
-                    ]
-                )
-        return course_features
-
     def getProgramModules(self):
         modules = []
         for course_module in self.course_modules_id:
-            if course_module in self.contents and "blocks" in self.contents[course_module]:
+            if (
+                course_module in self.contents
+                and "blocks" in self.contents[course_module]
+            ):
                 module = {}
                 for block in self.contents[course_module]["blocks"]:
                     if "title" in block:
@@ -119,14 +105,10 @@ class CourseJson:
                     if "lessons" in block:
                         module["lessons"] = ""
                         for lesson in block["lessons"]:
-                            module["lessons"] += (
-                                clear(lesson["title"] + "\n"
-                                      if "title" in lesson else "")
-                                + clear(
-                                    lesson["description"]
-                                    if "description" in lesson
-                                    else ""
-                                )
+                            module["lessons"] += clear(
+                                lesson["title"] + "\n" if "title" in lesson else ""
+                            ) + clear(
+                                lesson["description"] if "description" in lesson else ""
                             )
 
                     if "description" in block:

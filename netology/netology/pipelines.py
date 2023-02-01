@@ -134,7 +134,7 @@ class DatabasePipeline:
             )
             self.connection.commit()
 
-    def insertIntoCourseRawIfNotExists(self, **kwargs):
+    def insertIntoCourseRaw(self, **kwargs):
         SQL = """insert into 
         course_raw(course_id,title,section_title,preview,description,program) 
         select %s, %s, %s, %s, %s, %s"""
@@ -150,6 +150,9 @@ class DatabasePipeline:
         self.connection.commit()
 
     def saveCourseRaw(self, adapter):
+        if "program_modules" not in adapter:
+            return
+
         courseId = self.selectCourseMetadataWhereUrl(adapter["program_url"])[0]
 
         sections = ""
@@ -157,17 +160,42 @@ class DatabasePipeline:
             if "name" in section:
                 sections += section["name"] + ". "
 
-        if "program_modules" not in adapter:
-            return
-
         for module in adapter["program_modules"]:
-            self.insertIntoCourseRawIfNotExists(
+            self.insertIntoCourseRaw(
                 course_id=courseId,
                 title=adapter["program_name"],
                 section_title=sections,
                 preview="",
                 description=module["description"],
                 program=module["lessons"],
+            )
+
+    def insertIntoReviewIfNotExists(self, **kwargs):
+        SQL = """insert into 
+        reviews(course_id,text,author) 
+        select %s, %s, %s where not exists
+        (select * from reviews
+        where course_id = %s and text ILIKE %s and author ILIKE %s)"""
+        data = (
+            kwargs["course_id"],
+            kwargs["text"],
+            kwargs["author"],
+            kwargs["course_id"],
+            kwargs["text"],
+            kwargs["author"] + '%',
+        )
+        self.cur.execute(SQL, data)
+        self.connection.commit()
+
+    def saveReview(self, adapter):
+        if "program_reviews" not in adapter:
+            return
+
+        courseId = self.selectCourseMetadataWhereUrl(adapter["program_url"])[0]
+
+        for review in adapter["program_reviews"]:
+            self.insertIntoReviewIfNotExists(
+                course_id=courseId, text=review["text"], author=review["name"]
             )
 
     def process_item(self, item, spider):
@@ -181,6 +209,10 @@ class DatabasePipeline:
 
             # Save course raw
             self.saveCourseRaw(adapter)
+
+            # Save review
+            self.saveReview(adapter)
+            
         except Exception as error:
             traceback.print_exc()
             print(error)

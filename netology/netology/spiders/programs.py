@@ -72,8 +72,6 @@ class ProgramsSpider(scrapy.Spider):
                 "https://netology.ru/backend/api/page_contents/"
                 + item["program_url"].split("/")[-1]
             )
-        # if True:
-        #     url = 'https://netology.ru/backend/api/page_contents/excelpbi'
             request = scrapy.Request(url, callback=self.getInformation)
             request.cb_kwargs["item"] = item
             yield request
