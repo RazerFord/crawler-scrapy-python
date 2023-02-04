@@ -23,7 +23,8 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS course_metadata (
         id SERIAL PRIMARY KEY,
-        source_id BIGINT REFERENCES source (id) ON UPDATE CASCADE,
+        source_couse_id BIGINT,
+        source_id BIGINT REFERENCES source (id) ON UPDATE CASCADE ON DELETE CASCADE,
         url TEXT NOT NULL,
         last_update TIMESTAMP DEFAULT NOW(),
         duration TEXT,
