@@ -2,7 +2,6 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
-from scrapy import Selector
 import html2text
 from .parse_course_json import CourseJson
 
@@ -85,8 +84,6 @@ class ProgramsSpider(scrapy.Spider):
             item["program_description"] = courseJson.getDescriptions(
                 item["program_description"]
             )
-
-            item["program_programs"] = courseJson.getCourseFeatures()
 
             item["program_modules"] = courseJson.getProgramModules()
         except ValueError as error:

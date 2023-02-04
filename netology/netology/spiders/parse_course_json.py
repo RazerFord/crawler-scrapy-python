@@ -1,13 +1,5 @@
 import json
-import html2text
-
-
-def clear(text_):
-    if text_ is None:
-        return ""
-    h = html2text.HTML2Text()
-    h.ignore_links = True
-    return h.handle(text_)
+from ..helper.clear import clear
 
 
 class CourseJson:
@@ -37,7 +29,6 @@ class CourseJson:
     def setComponentsId(self, components):
         self.reviews_id = []
         self.descriptions_id = []
-        self.course_features_id = []
         self.course_modules_id = []
 
         for component in components:
@@ -45,8 +36,6 @@ class CourseJson:
                 self.reviews_id.append(component)
             if "courseDescriptionText" in component:
                 self.descriptions_id.append(component)
-            if "courseFeaturesWithImages" in component:
-                self.course_features_id.append(component)
             if "programModule" in component:
                 self.course_modules_id.append(component)
 
@@ -75,21 +64,6 @@ class CourseJson:
                 descriptions.append(text)
         return descriptions
 
-    def getCourseFeatures(self):
-        course_features = []
-        for course_feature in self.course_features_id:
-            if course_feature in self.contents:
-                course_features.append(
-                    [
-                        {
-                            "title": clear(item["title"]),
-                            "description": clear(item["description"]),
-                        }
-                        for item in self.contents[course_feature]["items"]
-                    ]
-                )
-        return course_features
-
     def getProgramModules(self):
         modules = []
         for course_module in self.course_modules_id:
@@ -97,23 +71,18 @@ class CourseJson:
                 course_module in self.contents
                 and "blocks" in self.contents[course_module]
             ):
-                module = {}
+                module = {"title": "", "lessons": "", "description": ""}
                 for block in self.contents[course_module]["blocks"]:
-                    if "title" in block:
+                    if "title" in block and len(block["title"]) > 0:
                         module["title"] = clear(block["title"])
 
-                    if "lessons" in block:
-                        module["lessons"] = ""
-                        for lesson in block["lessons"]:
-                            module["lessons"] += clear(
-                                lesson["title"] + "\n" if "title" in lesson else ""
-                            ) + clear(
-                                lesson["description"] if "description" in lesson else ""
-                            )
+                    if "lessons" in block and len(block["lessons"]) > 0:
+                        module["lessons"] = block["lessons"]
 
-                    if "description" in block:
+                    if "description" in block and len(block["description"]) > 0:
                         module["description"] = clear(block["description"])
-                if module != {}:
+
+                if module != {"title": "", "lessons": "", "description": ""}:
                     modules.append(module)
 
         return modules
