@@ -9,6 +9,7 @@ from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 import psycopg2
 import traceback
+from .helper.clear import clear
 
 
 class NetologyPipeline:
@@ -156,19 +157,37 @@ class DatabasePipeline:
         courseId = self.selectCourseMetadataWhereUrl(adapter["program_url"])[0]
 
         sections = ""
+
         for section in adapter["program_directions"]:
             if "name" in section:
                 sections += section["name"] + ". "
 
+        indexModule = 1
+        indexLesson = 1
+
+        previews = ""
+        lessons = ""
         for module in adapter["program_modules"]:
-            self.insertIntoCourseRaw(
-                course_id=courseId,
-                title=adapter["program_name"],
-                section_title=sections,
-                preview="",
-                description=module["description"],
-                program=module["lessons"],
-            )
+            previews += f"{indexModule}. {module['description']}\n"
+            lessons += f"{indexModule}. {module['title']}\n"
+            for lesson in module["lessons"]:
+                if "title" in lesson:
+                    lessons += f"{indexModule}.{indexLesson}. {clear(lesson['title'])}{clear(lesson['description']) if 'description' in lesson else ''}\n"
+                    indexLesson += 1
+            indexModule += 1
+
+        previews = "\n".join([s for s in previews.split("\n") if s != ""])
+        lessons = "\n".join([s for s in lessons.split("\n") if s != ""])
+        description = "\n".join(s for s in "".join(adapter["program_description"]).split("\n") if s != "")
+
+        self.insertIntoCourseRaw(
+            course_id=courseId,
+            title=adapter["program_name"],
+            section_title=sections,
+            preview=previews,
+            description=description,
+            program=lessons,
+        )
 
     def insertIntoReviewIfNotExists(self, **kwargs):
         SQL = """insert into 
@@ -182,7 +201,7 @@ class DatabasePipeline:
             kwargs["author"],
             kwargs["course_id"],
             kwargs["text"],
-            kwargs["author"] + '%',
+            kwargs["author"] + "%",
         )
         self.cur.execute(SQL, data)
         self.connection.commit()
@@ -212,7 +231,7 @@ class DatabasePipeline:
 
             # Save review
             self.saveReview(adapter)
-            
+
         except Exception as error:
             traceback.print_exc()
             print(error)
