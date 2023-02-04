@@ -164,10 +164,28 @@ class DatabasePipeline:
             self.connection.commit()
 
     def insertIntoCourseRaw(self, **kwargs):
-        SQL = """insert into 
-        course_raw(course_id,title,section_title,preview,description,program) 
-        select %s, %s, %s, %s, %s, %s"""
+        SQL = """DO $$
+                 BEGIN
+                 IF EXISTS(SELECT * FROM course_raw WHERE course_id=%s) THEN
+                 	UPDATE course_raw SET title=%s, 
+                                               section_title=%s, 
+                                               preview=%s, 
+                                               description=%s, 
+                                               program=%s 
+                                               WHERE course_id=%s;
+                 ELSE
+                 	INSERT INTO course_raw(course_id,title,section_title,preview,description,program)
+                    SELECT %s, %s, %s, %s, %s, %s;
+                 END IF;
+                 END $$;"""
         data = (
+            kwargs["course_id"],
+            kwargs["title"],
+            kwargs["section_title"],
+            kwargs["preview"],
+            kwargs["description"],
+            kwargs["program"],
+            kwargs["course_id"],
             kwargs["course_id"],
             kwargs["title"],
             kwargs["section_title"],
