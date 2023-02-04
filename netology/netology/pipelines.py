@@ -44,6 +44,19 @@ class DatabasePipeline:
 
         self.source_id = self.getSourceId()
 
+        self.allCourseId, self.allCourseSourceIdToId = self.getCourseMetadataIds()
+
+    def getCourseMetadataIds(self):
+        SQL = """SELECT id, source_couse_id FROM course_metadata"""
+
+        self.cur.execute(SQL)
+        data = self.cur.fetchall()
+
+        allCourseId = {id: False for id, _ in data}
+        allCourseSourceIdToId = {source_couse_id: id for id, source_couse_id in data}
+
+        return allCourseId, allCourseSourceIdToId
+
     def getSourceId(self):
         SQL = """SELECT * FROM source
         WHERE url ILIKE %s"""
@@ -55,6 +68,19 @@ class DatabasePipeline:
         return self.cur.fetchone()[0]
 
     def close_spider(self, spider):
+        try:
+            courseIds = [
+                id for id, exists in self.allCourseId.items() if exists == False
+            ]
+            if len(courseIds) > 0:
+                self.deleteIn(courseIds)
+                print("courses with next id deleted: ", courseIds)
+
+        except Exception as error:
+            traceback.print_exc()
+            print(error)
+            self.connection.rollback()
+
         if self.cur is not None:
             self.cur.close()
             self.connection.close()
@@ -100,10 +126,12 @@ class DatabasePipeline:
 
     def insertIntoCourseMetaDataIfNotExists(self, **kwargs):
         SQL = """insert into 
-        course_metadata(source_id,url,duration,level_id,price,price_other) 
-        select %s, %s, %s, %s, %s, %s where not exists 
+        course_metadata(source_couse_id, source_id,url,duration,level_id,price,price_other) 
+        select %s, %s, %s, %s, %s, %s, %s where not exists 
         (select id from course_metadata where url ILIKE %s)"""
+
         data = (
+            kwargs["source_couse_id"],
             kwargs["source_id"],
             kwargs["url"],
             kwargs["duration"],
@@ -123,7 +151,7 @@ class DatabasePipeline:
         ):
             self.courseIds.add(adapter["program_id"])
             self.insertIntoCourseMetaDataIfNotExists(
-                id=adapter["program_id"],
+                source_couse_id=adapter["program_id"],
                 source_id=self.source_id,
                 url=adapter["program_url"],
                 duration=self.ifKeyExists(adapter["program_duration"], "duration", 0),
@@ -178,7 +206,9 @@ class DatabasePipeline:
 
         previews = "\n".join([s for s in previews.split("\n") if s != ""])
         lessons = "\n".join([s for s in lessons.split("\n") if s != ""])
-        description = "\n".join(s for s in "".join(adapter["program_description"]).split("\n") if s != "")
+        description = "\n".join(
+            s for s in "".join(adapter["program_description"]).split("\n") if s != ""
+        )
 
         self.insertIntoCourseRaw(
             course_id=courseId,
@@ -217,9 +247,21 @@ class DatabasePipeline:
                 course_id=courseId, text=review["text"], author=review["name"]
             )
 
+    def deleteIn(self, courseIds):
+        self.cur.execute(
+            "DELETE FROM course_metadata WHERE id IN %(list_course)s",
+            {"list_course": tuple(courseIds)},
+        )
+        self.connection.commit()
+
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         try:
+            if adapter["program_id"] in self.allCourseSourceIdToId:
+                self.allCourseId[
+                    self.allCourseSourceIdToId[adapter["program_id"]]
+                ] = True
+
             # Save level course
             self.saveLevel(adapter)
 
@@ -237,4 +279,5 @@ class DatabasePipeline:
             print(error)
             print(adapter["program_id"], adapter["program_name"], "not save")
             self.connection.rollback()
+
         return item
