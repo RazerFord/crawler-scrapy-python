@@ -9,7 +9,7 @@ from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 import psycopg2
 import traceback
-from .helper.clear import clear
+from .helpers.clear import clear
 
 
 class NetologyPipeline:
