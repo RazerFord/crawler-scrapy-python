@@ -3,7 +3,7 @@ import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
 import html2text
-from .parse_course_json import CourseJson
+from ..helper.parse_course_json import CourseJson
 
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
