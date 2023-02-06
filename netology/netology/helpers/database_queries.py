@@ -1,8 +1,8 @@
 import psycopg2
-from .clear import clear
+from .singleton import Singleton
 
 
-class DatabaseQueries:
+class DatabaseQueries(metaclass=Singleton):
     def __init__(self, hostname, username, password, dbname):
         try:
             self.connection = psycopg2.connect(
@@ -27,10 +27,10 @@ class DatabaseQueries:
 
         return self.cur.fetchone()[0]
 
-    def getCourseMetadataIds(self):
-        SQL = """SELECT id, source_couse_id FROM course_metadata"""
+    def getCourseMetadataIds(self, source_id):
+        SQL = """SELECT id, source_couse_id FROM course_metadata WHERE source_id=%s"""
 
-        self.cur.execute(SQL)
+        self.cur.execute(SQL, [source_id])
 
         return self.cur.fetchall()
 
@@ -127,12 +127,12 @@ class DatabaseQueries:
     def deleteIn(self, courseIds):
         print(courseIds)
         SQL = "DELETE FROM course_metadata WHERE id IN %(list_course)s"
-        
+
         self.cur.execute(
             SQL,
             {"list_course": tuple(courseIds)},
         )
-        
+
         self.connection.commit()
 
     def rollback(self):

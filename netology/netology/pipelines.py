@@ -40,7 +40,7 @@ class DatabasePipeline:
         url = "netology"
         self.source_id = self.dbQuery.getSourceId(url)
 
-        data = self.dbQuery.getCourseMetadataIds()
+        data = self.dbQuery.getCourseMetadataIds(self.source_id)
 
         self.allCourseId = {id: False for id, _ in data}
         self.allCourseSourceIdToId = {
