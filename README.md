@@ -10,4 +10,5 @@
 
 # Запустить паука
 > `scrapy runspider ./netology/netology/spiders/programs.py -o prog.csv`
+
 > Из папки `netology` написать в консоли `scrapy crawl programs`
