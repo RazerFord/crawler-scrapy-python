@@ -37,7 +37,7 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS course_raw (
         id SERIAL PRIMARY KEY,
-        course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE,
+        course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE ON DELETE CASCADE,
         title VARCHAR(255) DEFAULT NULL,
         section_title VARCHAR(255) DEFAULT NULL,
         preview TEXT DEFAULT NULL,
