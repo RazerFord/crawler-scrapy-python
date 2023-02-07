@@ -40,7 +40,7 @@ class ProgramsSpider(scrapy.Spider):
     }
 
     start_urls = [get_scraperapi_url(
-        "https://netology.ru/backend/api/programs")]
+        "https://netology.ru/backend/api/directions/development/programs")]
 
     def parse(self, response):
         raw_data = response.body
