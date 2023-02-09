@@ -11,7 +11,6 @@
 |-----------------------------------------------------|---------|
 |`https://netology.ru/backend/api/page_contents/qa`|Подробная информация о курсе|
 
-
 # Запустить паука
 > `scrapy runspider ./netology/netology/spiders/programs.py -o prog.csv`
 
