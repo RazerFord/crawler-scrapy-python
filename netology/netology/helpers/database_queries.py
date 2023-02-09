@@ -54,13 +54,26 @@ class DatabaseQueries(metaclass=Singleton):
         self.cur.execute(SQL, data)
         self.connection.commit()
 
-    def insertIntoCourseMetaDataIfNotExists(self, **kwargs):
-        SQL = """insert into 
-        course_metadata(source_couse_id, source_id,url,duration,level_id,price,price_other) 
-        select %s, %s, %s, %s, %s, %s, %s where not exists 
-        (select id from course_metadata where url ILIKE %s)"""
+    def insertOrUpdateIntoMetaData(self, **kwargs):
+        SQL = """DO $$
+                 BEGIN
+                 IF EXISTS(SELECT * FROM course_metadata WHERE url ILIKE %s) THEN
+                 	UPDATE course_metadata SET source_couse_id=%s, 
+                                               source_id=%s, 
+                                               url=%s, 
+                                               duration=%s, 
+                                               level_id=%s,
+                                               price=%s,
+                                               price_other=%s 
+                                         WHERE url ILIKE %s;
+                 ELSE
+                 	INSERT INTO course_metadata(source_couse_id, source_id,url,duration,level_id,price,price_other)
+                    select %s, %s, %s, %s, %s, %s, %s;
+                 END IF;
+                 END $$;"""
 
         data = (
+            kwargs["url"],
             kwargs["source_couse_id"],
             kwargs["source_id"],
             kwargs["url"],
@@ -69,6 +82,13 @@ class DatabaseQueries(metaclass=Singleton):
             kwargs["price"],
             kwargs["price_other"],
             kwargs["url"],
+            kwargs["source_couse_id"],
+            kwargs["source_id"],
+            kwargs["url"],
+            kwargs["duration"],
+            kwargs["level_id"],
+            kwargs["price"],
+            kwargs["price_other"],
         )
 
         self.cur.execute(SQL, data)
@@ -79,11 +99,11 @@ class DatabaseQueries(metaclass=Singleton):
                  BEGIN
                  IF EXISTS(SELECT * FROM course_raw WHERE course_id=%s) THEN
                  	UPDATE course_raw SET title=%s, 
-                                               section_title=%s, 
-                                               preview=%s, 
-                                               description=%s, 
-                                               program=%s 
-                                               WHERE course_id=%s;
+                                          section_title=%s, 
+                                          preview=%s, 
+                                          description=%s, 
+                                          program=%s 
+                                          WHERE course_id=%s;
                  ELSE
                  	INSERT INTO course_raw(course_id,title,section_title,preview,description,program)
                     SELECT %s, %s, %s, %s, %s, %s;

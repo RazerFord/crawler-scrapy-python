@@ -88,7 +88,7 @@ class DatabasePipeline:
             and adapter["program_id"] not in self.courseIds
         ):
             self.courseIds.add(adapter["program_id"])
-            self.dbQuery.insertIntoCourseMetaDataIfNotExists(
+            self.dbQuery.insertOrUpdateIntoMetaData(
                 source_couse_id=adapter["program_id"],
                 source_id=self.source_id,
                 url=adapter["program_url"],
