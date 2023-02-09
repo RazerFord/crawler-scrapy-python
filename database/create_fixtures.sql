@@ -48,7 +48,7 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS reviews (
         id SERIAL PRIMARY KEY,
-        course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE,
+        course_id BIGINT REFERENCES course_metadata (id) ON UPDATE CASCADE ON DELETE CASCADE,
         text TEXT,
         author VARCHAR(255),
         date DATE

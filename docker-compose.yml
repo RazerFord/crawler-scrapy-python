@@ -7,10 +7,13 @@ services:
     volumes:
       - .:/netology
     tty: true
+    environment:
+      - TIME_BREAK=1000
     depends_on:
       - db
     ports:
       - 8080:8080
+    command: "python3 ./script.py"
       
   db:
     build: 
