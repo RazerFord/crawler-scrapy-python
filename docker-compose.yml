@@ -8,11 +8,11 @@ services:
       - .:/netology
     tty: true
     environment:
-      - TIME_BREAK=1000
-    depends_on:
-      - db
+      - TIME_BREAK=10000
     ports:
       - 8080:8080
+    depends_on:
+      - db
     command: "python3 ./script.py"
       
   db:
