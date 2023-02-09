@@ -19,8 +19,7 @@ def run():
             f.write("stop scrapy\n\n")
             iteration += 1
             print("sleep")
-            sleep(10)
-            # sleep(int(environ["TIME_BREAK"]))
+            sleep(int(environ["TIME_BREAK"]))
 
 
 if __name__ == "__main__":
