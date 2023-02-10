@@ -8,7 +8,7 @@ services:
       - .:/netology
     tty: true
     environment:
-      - TIME_BREAK=10000
+      - EXACT_TIME=00:27
     ports:
       - 8080:8080
     depends_on:
@@ -19,5 +19,9 @@ services:
     build: 
       context: ./database
       dockerfile: ./Dockerfile
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=netology
     ports:
       - 5432:5432
