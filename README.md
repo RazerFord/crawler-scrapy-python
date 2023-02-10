@@ -17,7 +17,7 @@
 > Из папки `netology` написать в консоли `scrapy crawl programs`
 
 # Управление schedule
-В файле `docker-compose.yml` изменить на 11 строчке написать:
+В файле `docker-compose.yml` изменить 11 строчку на:
 
 > `- EXACT_TIME=00:27` - запускать `Crawler` в определенное время
 
