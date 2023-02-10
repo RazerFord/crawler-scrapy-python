@@ -15,3 +15,10 @@
 > `scrapy runspider ./netology/netology/spiders/programs.py -o prog.csv`
 
 > Из папки `netology` написать в консоли `scrapy crawl programs`
+
+# Управление schedule
+В файле `docker-compose.yml` изменить на 11 строчке написать:
+
+> `- EXACT_TIME=00:27` - запускать `Crawler` в определенное время
+
+> `- TIME_BREAK=1000` - запускать `Crawler` каждые `1000` секунд
