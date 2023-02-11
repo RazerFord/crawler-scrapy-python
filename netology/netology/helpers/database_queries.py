@@ -89,6 +89,23 @@ class DatabaseQueries(metaclass=Singleton):
 
         return self.cur.fetchone()
 
+    """Получить уровень сложности
+
+    Args:
+        self (DatabaseQueries): экземпляр класса
+        text  (str): уровень сложности
+
+    Returns:
+        (int, int, int, str, str, str, int, int, int, str): кортеж с информацией о курсе
+    """
+    def selectLevelWhereText(self, text):
+        SQL = """select * from level
+        where text = %s"""
+
+        self.cur.execute(SQL, [text])
+
+        return self.cur.fetchone()
+
     """Вставляет уровень сложности в таблицу level БД, если запись о сложности отсутствует
 
     Args:
@@ -100,13 +117,12 @@ class DatabaseQueries(metaclass=Singleton):
         None
     """
     def insertIntoLevelIfNotExists(self, **kwargs):
-        SQL = """insert into level(id,text) 
-        select %s, %s where not exists 
-        (select id from level where id = %s)"""
+        SQL = """insert into level(text) 
+        select %s where not exists 
+        (select * from level where text = %s)"""
         data = (
-            kwargs["id"],
             kwargs["level"],
-            kwargs["id"],
+            kwargs["level"],
         )
         self.cur.execute(SQL, data)
         self.connection.commit()

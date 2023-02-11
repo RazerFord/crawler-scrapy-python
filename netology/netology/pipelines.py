@@ -59,6 +59,7 @@ class DatabasePipeline:
         self.allCourseSourceIdToId = {
             source_couse_id: id for id, source_couse_id in data
         }
+        self.levelWebsiteToLevelBd = {}
 
     """Удаляет курсы, которых нет на интернет ресурсе
 
@@ -128,11 +129,15 @@ class DatabasePipeline:
             and adapter["program_level_of_training"] is not None
             and adapter["program_level_of_training"]["id"] not in self.levelIds
         ):
-            self.levelIds.add(adapter["program_level_of_training"]["id"])
+            name = adapter["program_level_of_training"]["name"]
+            
             self.dbQuery.insertIntoLevelIfNotExists(
-                id=adapter["program_level_of_training"]["id"],
-                level=adapter["program_level_of_training"]["name"],
+                level=name,
             )
+
+            self.levelWebsiteToLevelBd[adapter["program_level_of_training"]["id"]] = self.dbQuery.selectLevelWhereText(name)[0]
+
+            self.levelIds.add(adapter["program_level_of_training"]["id"])
 
     """Сохраняет запись о курсе в таблице course_metadata
 
@@ -156,9 +161,9 @@ class DatabasePipeline:
                 source_id=self.source_id,
                 url=adapter["program_url"],
                 duration=self.ifKeyExists(adapter["program_duration"], "duration", 0),
-                level_id=self.ifKeyExists(
+                level_id=self.levelWebsiteToLevelBd[self.ifKeyExists(
                     adapter["program_level_of_training"], "id", 1
-                ),
+                )],
                 price=adapter["program_cost"]["current_price"],
                 price_other=adapter["program_cost"]["initial_price"],
             )
@@ -258,7 +263,7 @@ class DatabasePipeline:
                     self.allCourseSourceIdToId[adapter["program_id"]]
                 ] = True
 
-            # Сохранить уровни курса
+            # Сохранить уровень курса
             self.saveLevel(adapter)
 
             # Сохранить метаинформацию о курсе
