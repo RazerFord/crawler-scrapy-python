@@ -11,6 +11,8 @@ import unicodedata
 def clear(text):
     unicodedata.normalize('NFKD', remove_tags(text))
 
+"""Класс для представления информации о каждом курсе
+"""
 class NetologyItem(scrapy.Item):
     program_id = scrapy.Field()
     program_name = scrapy.Field()

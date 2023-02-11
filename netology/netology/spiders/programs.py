@@ -2,21 +2,20 @@ import scrapy
 import json
 from netology.items import NetologyItem
 from urllib.parse import urlencode
-import html2text
 from ..helpers.parse_course_json import CourseJson
+from ..helpers.clear import clear
 
 
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 
+"""Изменяет URL, чтобы использовать API scrapy 
 
-def clear(text_):
-    if text_ is None:
-        return ""
-    h = html2text.HTML2Text()
-    h.ignore_links = True
-    return h.handle(text_)
+Args:
+    url (str): URL
 
-
+Returns:
+    str: новый URL
+"""
 def get_scraperapi_url(url):
     if url == "":
         return
@@ -39,9 +38,19 @@ class ProgramsSpider(scrapy.Spider):
         }
     }
 
+    """Работа паука начинаяется с этих адресов
+    """
     start_urls = [get_scraperapi_url(
         "https://netology.ru/backend/api/directions/development/programs")]
 
+    """После выполнения первых запросов ответ парсится в этой функции  
+
+    Args:
+        response (scrapy.http.response.text.TextResponse): ответ с общей информацией о всех курсах
+
+    Returns:
+        NetologyItem: элемент с информацией о курсе
+    """
     def parse(self, response):
         raw_data = response.body
         data = json.loads(raw_data)
@@ -75,6 +84,14 @@ class ProgramsSpider(scrapy.Spider):
             request.cb_kwargs["item"] = item
             yield request
 
+    """Парсится информация для получения конкретной информации по каждому курсу  
+
+    Args:
+        response (scrapy.http.response.text.TextResponse): ответ
+
+    Returns:
+        NetologyItem: элемент с конкретной информацией о курсе
+    """
     def getInformation(self, response, item):
         try:
             courseJson = CourseJson(response)
