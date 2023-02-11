@@ -11,6 +11,8 @@ import traceback
 from .helpers.clear import clear
 from .helpers.database_queries import DatabaseQueries
 
+"""Обрабатывает дубликаты
+"""
 class NetologyPipeline:
     def __init__(self):
         self.ids_seen = set()
@@ -23,8 +25,18 @@ class NetologyPipeline:
             self.ids_seen.add(adapter["program_id"])
         return item
 
-
+"""Сохранение информации в БД
+"""
 class DatabasePipeline:
+    """Создает объект для взаимодействия с БД, инициализирует вспомогательные структуры данных
+
+    Args:
+        self   (DatabasePipeline): экземпляр класса
+        spider (netology.spiders.programs.ProgramsSpider): паук
+
+    Returns:
+        None
+    """
     def open_spider(self, spider):
         self.levelIds = set()
         self.courseIds = set()
@@ -48,6 +60,15 @@ class DatabasePipeline:
             source_couse_id: id for id, source_couse_id in data
         }
 
+    """Удаляет курсы, которых нет на интернет ресурсе
+
+    Args:
+        self   (DatabasePipeline): экземпляр класса
+        spider (netology.spiders.programs.ProgramsSpider): паук
+
+    Returns:
+        None
+    """
     def close_spider(self, spider):
         try:
             courseIds = [
@@ -62,15 +83,46 @@ class DatabasePipeline:
             print(error)
             self.dbQuery.rollback()
 
+    """Возвращает значение по-умолчанию, если значение None
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        value   (type): значение
+        default (type): значение по-умолчанию
+
+    Returns:
+        type: значение или значение по-умолчанию
+    """
     def ifExists(self, value, default):
         return default if value is None else value
 
+    """Возвращает значение по-умолчанию, если ключа не существует
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        value   (dict): словарь значений
+        key     (str): ключ
+        default (type): значение по-умолчанию
+
+    Returns:
+        type: значение или значение по-умолчанию
+    """
     def ifKeyExists(self, value, key, default):
         if value is not None and key in value:
             return value[key]
         return default
 
+    """Сохраняет сложности курсов
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        adapter (itemadapter.adapter.ItemAdapter): информация о курсе
+
+    Returns:
+        None
+    """
     def saveLevel(self, adapter):
+        # Проверка, что уровень сложности еще не сохранен
         if (
             "program_level_of_training" in adapter
             and adapter["program_level_of_training"] is not None
@@ -82,7 +134,17 @@ class DatabasePipeline:
                 level=adapter["program_level_of_training"]["name"],
             )
 
+    """Сохраняет запись о курсе в таблице course_metadata
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        adapter (itemadapter.adapter.ItemAdapter): информация о курсе
+
+    Returns:
+        None
+    """
     def saveMetadata(self, adapter):
+        # Проверка, что курс еще не сохранен
         if (
             "program_id" in adapter
             and adapter["program_id"] is not None
@@ -101,7 +163,17 @@ class DatabasePipeline:
                 price_other=adapter["program_cost"]["initial_price"],
             )
 
+    """Сохраняет запись о курсе в таблице course_raw. Форматирует ячейки превью и программы
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        adapter (itemadapter.adapter.ItemAdapter): информация о курсе
+
+    Returns:
+        None
+    """
     def saveCourseRaw(self, adapter):
+        # Проверка, что существует описание модулей у данного курса
         if "program_modules" not in adapter:
             return
 
@@ -109,6 +181,7 @@ class DatabasePipeline:
 
         sections = ""
 
+        # Объединение всех направлений в одну строку
         for section in adapter["program_directions"]:
             if "name" in section:
                 sections += section["name"] + ". "
@@ -118,6 +191,7 @@ class DatabasePipeline:
 
         previews = ""
         lessons = ""
+        # Объединение всех модулей в одну строку и форматирование
         for module in adapter["program_modules"]:
             previews += f"{indexModule}. {module['description']}\n"
             lessons += f"{indexModule}. {module['title']}\n"
@@ -127,6 +201,7 @@ class DatabasePipeline:
                     indexLesson += 1
             indexModule += 1
 
+        # Удаление лишних переносов строки
         previews = "\n".join([s for s in previews.split("\n") if s != ""])
         lessons = "\n".join([s for s in lessons.split("\n") if s != ""])
         description = "\n".join(
@@ -142,7 +217,17 @@ class DatabasePipeline:
             program=lessons,
         )
 
+    """Сохраняет отзывы о курсе в таблцу reviews
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        adapter (itemadapter.adapter.ItemAdapter): информация о курсе
+
+    Returns:
+        None
+    """
     def saveReview(self, adapter):
+        # Проверка, что существует описание модулей у данного курса
         if "program_reviews" not in adapter:
             return
 
@@ -153,24 +238,36 @@ class DatabasePipeline:
                 course_id=courseId, text=review["text"], author=review["name"]
             )
 
+    """Сохраняет отзывы о курсе в таблцу reviews
+
+    Args:
+        self    (DatabasePipeline): экземпляр класса
+        item (NetologyItem): информация о курсе
+        spider (netology.spiders.programs.ProgramsSpider): паук
+
+    Returns:
+        None
+    """
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         try:
+            # Если курс, который есть в БД присутствует в ответе, то пометить это. 
+            # Необходимо для удаления курсов, которые были удалены с интернет-ресурса
             if adapter["program_id"] in self.allCourseSourceIdToId:
                 self.allCourseId[
                     self.allCourseSourceIdToId[adapter["program_id"]]
                 ] = True
 
-            # Save level course
+            # Сохранить уровни курса
             self.saveLevel(adapter)
 
-            # Save metadata of course
+            # Сохранить метаинформацию о курсе
             self.saveMetadata(adapter)
 
-            # Save course raw
+            # Сохранить информацию о курсе
             self.saveCourseRaw(adapter)
 
-            # Save review
+            # Сохранить отзыв
             self.saveReview(adapter)
 
         except Exception as error:
