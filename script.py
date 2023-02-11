@@ -5,6 +5,7 @@ import schedule
 
 iteration = 1
 time = str()
+start = False
 
 def run():
     global iteration
@@ -25,16 +26,18 @@ def run():
 
 def initSchedule():
     sleep(5)
-    global time
+    global time, start
     if "TIME_BREAK" in environ:
-        schedule.every(environ["TIME_BREAK"]).seconds.do(run)
+        schedule.every(int(environ["TIME_BREAK"])).seconds.do(run)
         time = f"time break: {environ['TIME_BREAK']}\n"
+        start = True
     elif "EXACT_TIME" in environ:
         schedule.every().day.at(environ["EXACT_TIME"]).do(run)
         time = f"exact time: {environ['EXACT_TIME']}\n"
+        start = True
 
 if __name__ == "__main__":
     initSchedule()
-    while True:
+    while start:
         schedule.run_pending()
         sleep(1)

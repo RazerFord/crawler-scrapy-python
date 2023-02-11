@@ -5,10 +5,10 @@ services:
       context: .
       dockerfile: ./app/Dockerfile
     volumes:
-      - .:/netology
+      - .:/app
     tty: true
     environment:
-      - EXACT_TIME=00:27
+      - TIME_BREAK=10
       - SAVEINDB=1
       - HOSTNAME=db
       - USERNAME=postgres
