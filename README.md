@@ -22,8 +22,40 @@
 
 > `TIME_BREAK=1000` - запускать `Crawler` каждые `1000` секунд
 
+## Отключение записи в БД
+### В контейнере
+Для отключения записи в БД необходимо: в файле `docker-compose.yml` в `environment` контейнера `app` параметр `SAVEINDB` изменить на `0`. Чтобы включить запись в БД, то необходимо параметр `SAVEINDB` изменить на `1`.
+
+### В файле настроек
+Найти файл `./netology/netology/settings.py`. В найденном файле найти строки:
+```Python
+ITEM_PIPELINES = {
+    "netology.pipelines.NetologyPipeline": 300,
+    "netology.pipelines.DatabasePipeline": 350
+    if "SAVEINDB" not in environ or int(environ["SAVEINDB"]) == 1
+    else None,
+}
+```
+
+Изменить на
+
+```Python
+ITEM_PIPELINES = {
+    "netology.pipelines.NetologyPipeline": 300,
+    "netology.pipelines.DatabasePipeline": 350,
+}
+```
+
 ## Ручной запуск парсера
 
-> `scrapy runspider ./netology/netology/spiders/programs.py -o prog.csv`
+Найти файл `./netology/netology/settings.py`. Найти и изменить параметры подключения к базе данных: `HOSTNAME`, `USERNAME`, `PASSWORD`, `DBNAME`.
 
-> Из папки `netology` в консоли написать `scrapy crawl programs`
+Запустить паука одним из следующих способов:
+
+> `scrapy runspider ./netology/netology/spiders/programs.py -o items.csv` - данные сохранится в `csv` и в БД
+
+> `scrapy runspider ./netology/netology/spiders/programs.py -o items.json` - данные сохранится в `json` и в БД
+
+> Из папки `netology` в консоли написать `scrapy crawl programs -o items.csv` - данные сохранится в `csv` и в БД
+
+> Из папки `netology` в консоли написать `scrapy crawl programs -o items.json` - данные сохранится в `json` и в БД

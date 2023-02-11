@@ -66,7 +66,9 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "netology.pipelines.NetologyPipeline": 300,
-    "netology.pipelines.DatabasePipeline": 350,
+    "netology.pipelines.DatabasePipeline": 350
+    if "SAVEINDB" not in environ or int(environ["SAVEINDB"]) == 1
+    else None,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

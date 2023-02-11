@@ -9,6 +9,7 @@ services:
     tty: true
     environment:
       - EXACT_TIME=00:27
+      - SAVEINDB=1
       - HOSTNAME=db
       - USERNAME=postgres
       - PASSWORD=postgres
