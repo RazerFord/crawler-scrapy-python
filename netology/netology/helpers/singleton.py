@@ -1,3 +1,5 @@
+"""Metaclass для создания singleton
+"""
 class Singleton(type):
     instances = {}
 

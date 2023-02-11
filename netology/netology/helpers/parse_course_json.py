@@ -3,6 +3,15 @@ from .clear import clear
 
 
 class CourseJson:
+    """Инициализирует класс для парсинга json
+
+    Args:
+        self     (CourseJson): экземпляр класса
+        response (scrapy.http.response.text.TextResponse): ответ
+
+    Returns:
+        None
+    """
     def __init__(self, response):
         raw_data = response.body
 
@@ -26,6 +35,15 @@ class CourseJson:
 
         self.contents = data["content"]
 
+    """Выбирает категории из json, которые нужно парсить
+
+    Args:
+        self     (CourseJson): экземпляр класса
+        response (list): компоненты
+
+    Returns:
+        None
+    """
     def setComponentsId(self, components):
         self.reviews_id = []
         self.descriptions_id = []
@@ -39,6 +57,14 @@ class CourseJson:
             if "programModule" in component:
                 self.course_modules_id.append(component)
 
+    """Парсит все отзывы
+
+    Args:
+        self (CourseJson): экземпляр класса
+
+    Returns:
+        [dict]: отзывы: имя автора, текст
+    """
     def getReviews(self):
         reviews = []
         for review in self.reviews_id:
@@ -52,6 +78,15 @@ class CourseJson:
                 ]
         return reviews
 
+    """Парсит все описания курса
+
+    Args:
+        self         (CourseJson): экземпляр класса
+        descriptions ([str]): описание на странице со всеми курсами
+
+    Returns:
+        [str]: описания о курсе
+    """
     def getDescriptions(self, descriptions):
         for description in self.descriptions_id:
             if description in self.contents:
@@ -64,6 +99,14 @@ class CourseJson:
                 descriptions.append(text)
         return descriptions
 
+    """Парсит всю информацию о моделях в курсе
+
+    Args:
+        self (CourseJson): экземпляр класса
+
+    Returns:
+        [dict]: описания о модулях курса. Для каждого отдельного модуля: название, уроки, описание
+    """
     def getProgramModules(self):
         modules = []
         for course_module in self.course_modules_id:
@@ -84,5 +127,4 @@ class CourseJson:
 
                 if module != {"title": "", "lessons": "", "description": ""}:
                     modules.append(module)
-
         return modules
