@@ -1,3 +1,5 @@
+from os import environ
+
 # Scrapy settings for netology project
 #
 # For simplicity, this file contains only settings considered important or
@@ -14,7 +16,7 @@ NEWSPIDER_MODULE = "netology.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = 'Mozilla/5.0 (Windows NT 5.1; rv:5.0) Gecko/20100101 Firefox/5.0'  
+# USER_AGENT = 'Mozilla/5.0 (Windows NT 5.1; rv:5.0) Gecko/20100101 Firefox/5.0'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -65,6 +67,8 @@ ROBOTSTXT_OBEY = True
 ITEM_PIPELINES = {
     "netology.pipelines.NetologyPipeline": 300,
     "netology.pipelines.DatabasePipeline": 350
+    if "SAVEINDB" not in environ or int(environ["SAVEINDB"]) == 1
+    else None,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -91,3 +95,9 @@ ITEM_PIPELINES = {
 # Set settings whose default value is deprecated to a future-proof value
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+
+# Database connection parameters
+HOSTNAME = environ["HOSTNAME"]
+USERNAME = environ["USERNAME"]
+PASSWORD = environ["PASSWORD"]
+DBNAME = environ["DBNAME"]

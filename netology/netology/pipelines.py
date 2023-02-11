@@ -7,11 +7,9 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
-import psycopg2
 import traceback
 from .helpers.clear import clear
 from .helpers.database_queries import DatabaseQueries
-
 
 class NetologyPipeline:
     def __init__(self):
@@ -31,10 +29,13 @@ class DatabasePipeline:
         self.levelIds = set()
         self.courseIds = set()
 
-        host = "db"
-        user = "postgres"
-        passw = "postgres"
-        dbname = "netology"
+        paramsDb = spider.settings.attributes
+
+        host = paramsDb["HOSTNAME"].value
+        user = paramsDb["USERNAME"].value
+        passw = paramsDb["PASSWORD"].value
+        dbname = paramsDb["DBNAME"].value
+
         self.dbQuery = DatabaseQueries(host, user, passw, dbname)
 
         url = "netology"
