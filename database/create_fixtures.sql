@@ -16,7 +16,7 @@ WHERE NOT EXISTS (
 
 CREATE TABLE
     IF NOT EXISTS level (
-        id BIGINT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         text TEXT NOT NULL
     );
 

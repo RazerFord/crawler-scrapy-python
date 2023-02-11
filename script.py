@@ -13,7 +13,7 @@ def run():
         print("start crawl")
         f.write(f"start scrapy iteration {iteration}\n")
         out = subprocess.check_output(
-            "cd ./netology/ && scrapy crawl programs --logfile log",
+            "cd ./scrapy/ && scrapy crawl programs --logfile log",
             shell=True,
             universal_newlines=True,
         )
