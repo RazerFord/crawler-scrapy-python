@@ -246,7 +246,7 @@ class DatabasePipeline:
         spider (netology.spiders.programs.ProgramsSpider): паук
 
     Returns:
-        None
+        NetologyItem: элемент с информацией о курсе
     """
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
