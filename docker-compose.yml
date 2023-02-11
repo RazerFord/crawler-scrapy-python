@@ -9,6 +9,10 @@ services:
     tty: true
     environment:
       - EXACT_TIME=00:27
+      - HOSTNAME=db
+      - USERNAME=postgres
+      - PASSWORD=postgres
+      - DBNAME=netology
     ports:
       - 8080:8080
     depends_on:
