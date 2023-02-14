@@ -5,11 +5,13 @@ from urllib.parse import urlencode
 from ..helpers.parse_course_json import CourseJson
 from ..helpers.clear import clear
 
-
+"""Ключ, полученный с 
+   https://www.scraperapi.com"""
 API_KEY = "6a3fe92755c2709ff62efb276f01821c"
 
 """Изменяет URL, чтобы использовать API scrapy 
-
+   
+   За подробной информацией переходить на сайт: https://www.scraperapi.com
 Args:
     url (str): URL
 
