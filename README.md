@@ -42,7 +42,7 @@ ITEM_PIPELINES = {
 ```Python
 ITEM_PIPELINES = {
     "netology.pipelines.NetologyPipeline": 300,
-    "netology.pipelines.DatabasePipeline": 350,
+    "netology.pipelines.DatabasePipeline": None,
 }
 ```
 в этом же файле найти параметры подключения к базе данных: `HOSTNAME`, `USERNAME`, `PASSWORD`, `DBNAME` - и закомментировать.
